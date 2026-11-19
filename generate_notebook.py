@@ -22,9 +22,12 @@ def create_notebook():
     # Cell 1: Title and Metadata
     add_md("""# 6BUIS017W CRM & CM With Business Intelligence
 ## Individual Coursework CWK1: Market Analysis and Stock Segmentation Using RFM
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pasanaseniya-create/CR-CM-Coursework/blob/main/CR_CM_Coursework_Final.ipynb)
+
 **Student Name / ID:** Candidate Submission  
 **Module Leader:** Dr Panagiotis Chountas  
 **Institution:** University of Westminster, School of Computer Science & Engineering  
+**Public GitHub Repository:** https://github.com/pasanaseniya-create/CR-CM-Coursework  
 **Observation Date:** 2024-12-31 (Final completed trading session of 2024)  
 **Study Window:** 2021-01-01 to 2025-01-01 (Daily prices, volume, and ^GSPC benchmark)
 """)
@@ -33,8 +36,19 @@ def create_notebook():
     add_md("""### 1. Environment Setup & Dependency Installation
 We import standard data science libraries for tabular data manipulation, statistical modeling, clustering, and visual diagnostics.
 Package versions are logged to ensure full computational reproducibility.""")
-    add_code("""# Run in Colab if packages need installation:
-# !pip install yfinance pandas numpy scipy scikit-learn matplotlib seaborn
+    add_code("""# Colab environment setup: clone repository if running in Google Colab
+try:
+    import google.colab
+    IN_COLAB = True
+except ImportError:
+    IN_COLAB = False
+
+if IN_COLAB:
+    import os
+    if not os.path.exists("src"):
+        !git clone https://github.com/pasanaseniya-create/CR-CM-Coursework.git
+        %cd CR-CM-Coursework
+    !pip install -q yfinance scikit-learn seaborn matplotlib pandas numpy scipy
 
 import sys
 import os
