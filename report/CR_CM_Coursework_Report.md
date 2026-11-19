@@ -5,7 +5,7 @@
 **Module Leader:** Dr Panagiotis Chountas  
 **Institution:** University of Westminster, School of Computer Science & Engineering  
 **Submission Deadline:** 24 November 2026, 13:00  
-**GitHub Repository:** `https://github.com/chountp/CRM` (Student Fork / Implementation)  
+**GitHub Repository:** `https://github.com/pasanaseniya-create/CR-CM-Coursework`  
 **Study Period:** 1 January 2021 to 1 January 2025 (Terminal Session: 31 December 2024)  
 **Observation Date:** 31 December 2024  
 
@@ -230,7 +230,7 @@ Five core methodological limitations must qualify these conclusions:
 This research establishes that adapting RFM metrics to financial markets offers valuable diagnostic insight into institutional order activity, provided it is kept distinct from risk and return metrics. Blending these spaces into a single composite rank conceals the structural tension between market sensitivity and trading liquidity.
 
 All source code, automated test suites, cached data snapshots, and the executed Google Colab notebook are available in the public repository:
-* **GitHub Repository:** `https://github.com/chountp/CRM`
+* **GitHub Repository:** `https://github.com/pasanaseniya-create/CR-CM-Coursework`
 * **Google Colab Notebook:** `CR_CM_Coursework_Final.ipynb`
 * **Data Artifacts:** `data/features_all.csv`, `data/exclusion_log.csv`, `data/cluster_assignments.csv`
 
