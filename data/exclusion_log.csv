@@ -1,0 +1,13 @@
+Ticker,Reason
+CEG,Insufficient trading history (742 days < 804 required 80% threshold)
+FDXF,Empty price history
+GEHC,Insufficient trading history (513 days < 804 required 80% threshold)
+GEV,Insufficient trading history (193 days < 804 required 80% threshold)
+HONA,Empty price history
+Q,Empty price history
+RDDT,Insufficient trading history (197 days < 804 required 80% threshold)
+SNDK,Empty price history
+SOLV,Insufficient trading history (194 days < 804 required 80% threshold)
+TSLA,No qualifying high-volume event found in study history
+VLTO,Insufficient trading history (313 days < 804 required 80% threshold)
+VYLR,Empty price history
