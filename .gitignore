@@ -4,3 +4,13 @@ __pycache__/
 .ipynb_checkpoints/
 .DS_Store
 .superpowers/
+.venv/
+*.txt
+!requirements.txt
+report/~*
+*.tmp
+Lecture*
+Tutorial*
+CR & CM Lecture*
+CR & CM Tutorial*
+CR & CM*.pdf
