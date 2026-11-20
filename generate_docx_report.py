@@ -47,6 +47,36 @@ def set_cell_background(cell, fill_hex):
     shd.set(qn('w:fill'), fill_hex)
     tcPr.append(shd)
 
+def add_harvard_reference(doc, authors, year, title, container=None, vol_pages=None, pub_info=None):
+    """
+    Formats an authentic Cite Them Right Harvard bibliographic reference
+    with a 0.5-inch hanging indent and italicized containers/book titles.
+    """
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Inches(0.5)
+    p.paragraph_format.first_line_indent = Inches(-0.5)
+    p.paragraph_format.space_after = Pt(4)
+    
+    p.add_run(f"{authors} ({year}) ")
+    if container and vol_pages:
+        p.add_run(f"'{title}', ")
+        p.add_run(container).italic = True
+        p.add_run(f", {vol_pages}.")
+    elif container:
+        p.add_run(f"'{title}', in ")
+        p.add_run(container).italic = True
+        if pub_info:
+            p.add_run(f". {pub_info}.")
+        else:
+            p.add_run(".")
+    else:
+        p.add_run(title).italic = True
+        if pub_info:
+            p.add_run(f". {pub_info}.")
+        else:
+            p.add_run(".")
+    return p
+
 def create_docx_report():
     doc = docx.Document()
     
@@ -163,18 +193,19 @@ def create_docx_report():
     doc.add_heading("Executive Summary & Research Context", level=1)
     doc.add_paragraph(
         "Customer Relationship Management (CRM) conventionally applies Recency, Frequency, and Monetary (RFM) segmentation "
-        "to transactional databases to profile purchase recency, purchase regularity, and customer lifetime value. In financial "
-        "technology and asset pricing, however, equity securities do not exhibit consumer purchase behavior. Instead, equity "
-        "transactions reflect institutional order execution, market liquidity, and reactions to fundamental news, while returns "
+        "(Hughes, 1994) to transactional databases to profile purchase recency, purchase regularity, and customer lifetime value. "
+        "In financial technology and asset pricing, however, equity securities do not exhibit consumer purchase behavior. Instead, "
+        "equity transactions reflect institutional order execution, market liquidity, and reactions to fundamental news, while returns "
         "and volatility capture systematic risk and capital cost."
     )
     doc.add_paragraph(
         "This investigation adapts RFM principles to equity trading dynamics across the S&P 500 universe over a four-year window "
         "(2021–2024, terminating on the explicit observation date of 31 December 2024). We contrast this adapted trading-activity "
-        "space against a classic risk-return space defined by mean weekly return and weekly market beta. Using Agglomerative "
-        "Hierarchical Clustering (Ward linkage) and K-Means partitioning, we evaluate empirical group structures, assess sensitivity "
-        "to feature collinearity and Monetary omission via the Adjusted Rand Index, and formulate a Kimball dimensional data mart "
-        "for institutional asset managers and quantitative fintech platforms."
+        "space against a classic risk-return space grounded in Modern Portfolio Theory (Markowitz, 1952) and the Capital Asset "
+        "Pricing Model (Sharpe, 1964). Using Agglomerative Hierarchical Clustering (Ward, 1963; Kaufman and Rousseeuw, 2009) and "
+        "K-Means partitioning (MacQueen, 1967), we evaluate empirical group structures, assess sensitivity to feature collinearity and "
+        "Monetary omission via the Adjusted Rand Index (Hubert and Arabie, 1985), and formulate a Kimball dimensional data mart "
+        "(Kimball and Ross, 2013) for institutional asset managers and quantitative fintech platforms."
     )
     
     # ----------------------------------------------------
@@ -216,8 +247,9 @@ def create_docx_report():
     doc.add_paragraph(
         "Daily adjusted closing prices—incorporating dividend reinvestments and splits—were resampled into Friday-ending weeks (W-FRI), "
         "capturing the final available session price. Dropping incomplete boundary weeks yielded 208 aligned weekly returns. The return "
-        "feature is the arithmetic sample mean return over the full period.\n\n"
-        "Weekly Beta (Beta) measures systematic return sensitivity against the S&P 500 benchmark (^GSPC) over matched Friday sessions:\n"
+        "feature represents the arithmetic sample mean return over the study period.\n\n"
+        "Weekly Beta (Beta) measures systematic return sensitivity against the S&P 500 benchmark (^GSPC) over matched Friday sessions "
+        "in accordance with the Capital Asset Pricing Model (Sharpe, 1964; Fama and French, 1993):\n"
         "Beta = Cov(R_share, R_market) / Var(R_market)\n\n"
         "Across the 491 shares, beta averaged 1.054 (standard deviation: 0.407), spanning from defensive assets (Newmont NEM at 0.354) "
         "to high-beta technology shares (Enphase ENPH at 2.215, Tesla TSLA at 2.084).\n\n"
@@ -228,9 +260,10 @@ def create_docx_report():
     
     doc.add_heading("1.4 Adapted RFM Feature Engineering", level=2)
     doc.add_paragraph(
-        "Trading activity was quantified using three adapted measures anchored on 31 December 2024:\n"
+        "While traditional RFM measures transactional consumer loyalty (Hughes, 1994), its financial market adaptation translates "
+        "trading dynamics into three activity measures anchored on 31 December 2024:\n"
         "• High-Volume Event: Session t qualifies if its volume exceeds twice the mean volume of the preceding 20 trading sessions (excluding day t).\n"
-        "• Recency (R): Elapsed calendar days (including weekends and holidays) between the latest qualifying volume event in the valid study history and the observation date (31 December 2024). R = 0 if an event occurred on 31 December 2024.\n"
+        "• Recency (R): Elapsed calendar days between the latest qualifying volume event in the valid history and the observation date (31 December 2024). R = 0 if an event occurred on 31 December 2024.\n"
         "• Frequency (F): Integer count of qualifying event days within the latest 60 trading sessions ending 31 December 2024.\n"
         "• Monetary (M): Cumulative dollar traded turnover across the latest 60 trading sessions in USD: M = Sum(Close_t * Volume_t). This reflects capital turnover, not market capitalization."
     )
@@ -261,6 +294,11 @@ def create_docx_report():
         for c_idx, val in enumerate(r_vals):
             table1.cell(r_idx + 1, c_idx).text = val
             
+    doc.add_paragraph(
+        "Metric Interpretation & Liquidity Limitations: While dollar turnover (Monetary) acts as an operational proxy for liquidity scale, "
+        "it captures retrospective trading intensity rather than order book depth, bid-ask spreads, or market impact costs (Amihud, 2002)."
+    )
+    
     doc.add_page_break()
     
     # ----------------------------------------------------
@@ -279,10 +317,11 @@ def create_docx_report():
     
     doc.add_heading("2.2 Agglomerative Hierarchical Clustering (Ward Linkage)", level=2)
     doc.add_paragraph(
-        "Ward linkage with Euclidean distance was fitted to both standardized spaces. Dendrograms were constructed for each matrix. "
-        "Silhouette scores across candidate partitions k in [2, 8] were evaluated. Although k=2 maximizes silhouette width in RFM (0.3665), "
-        "it isolates extreme dormant outliers rather than identifying functional trading tiers. Selecting k=3 in both matrices achieved "
-        "balanced group sizes and clear financial interpretability."
+        "Agglomerative hierarchical clustering was implemented using Ward's minimum variance criterion in Euclidean space (Ward, 1963; "
+        "Kaufman and Rousseeuw, 2009). Dendrograms were constructed for both feature matrices. Silhouette width analysis (Rousseeuw, 1987) "
+        "across candidate partitions k in [2, 8] was evaluated. Although k=2 maximizes silhouette width in RFM (0.3665), it isolates extreme "
+        "dormant outliers rather than identifying functional trading tiers. Selecting k=3 in both matrices achieved balanced group sizes "
+        "and clear financial interpretability."
     )
     
     if os.path.exists("figures/dendrogram_risk_return.png"):
@@ -295,9 +334,9 @@ def create_docx_report():
         
     doc.add_heading("2.3 K-Means Clustering and Diagnostics", level=2)
     doc.add_paragraph(
-        "K-Means models (k in [2, 8]) were fitted with random_state=42 and n_init=30. Inertia curves exhibited elbows at k=3 "
-        "(Risk/Return inertia dropped from 629.6 at k=2 to 474.6 at k=3; RFM dropped from 1,079.3 to 802.5). Silhouette scores verified "
-        "stable partitioning (0.3213 for Risk/Return, 0.3257 for RFM at k=3)."
+        "K-Means partitioning (MacQueen, 1967) was fitted across candidate partitions k in [2, 8] with random_state=42 and n_init=30. "
+        "Inertia curves exhibited elbows at k=3 (Risk/Return inertia dropped from 629.6 at k=2 to 474.6 at k=3; RFM dropped from 1,079.3 "
+        "to 802.5). Silhouette scores (Rousseeuw, 1987) verified stable partitioning (0.3213 for Risk/Return, 0.3257 for RFM at k=3)."
     )
     
     if os.path.exists("figures/cluster_diagnostics.png"):
@@ -313,8 +352,8 @@ def create_docx_report():
         "• Adapted RFM Cluster 0 (Active Regulars, n=247): Recency 11.89 days, Frequency 3.07 events, 60-day turnover $47.66 Billion.\n"
         "• Adapted RFM Cluster 1 (Dormant Outliers, n=87): Recency 56.92 days, Frequency 0.62 events, 60-day turnover $48.21 Billion.\n"
         "• Adapted RFM Cluster 2 (Mid-Tier Turnover, n=157): Recency 13.65 days, Frequency 2.41 events, 60-day turnover $11.08 Billion.\n\n"
-        "Cross-algorithm agreement on identical shares was quantified via the Adjusted Rand Index: ARI(Ward RR, KMeans RR) = 0.1894, "
-        "and ARI(Ward RFM, KMeans RFM) = 0.3475."
+        "Cross-algorithm agreement on identical shares was quantified via the Adjusted Rand Index (Hubert and Arabie, 1985): "
+        "ARI(Ward RR, KMeans RR) = 0.1894, and ARI(Ward RFM, KMeans RFM) = 0.3475."
     )
     
     if os.path.exists("figures/scatter_risk_return.png"):
@@ -326,11 +365,11 @@ def create_docx_report():
     doc.add_paragraph(
         "Correlations between R, F, and log1p(M) confirmed negative collinearity between Recency and Frequency (r = -0.3447), "
         "giving event timing greater geometric weight than dollar turnover in Euclidean distance.\n\n"
-        "Monetary Removal Experiment: Ward clustering refitted on [R, F] alone at k=3 yielded an Adjusted Rand Index (ARI) of 0.3791. "
-        "This confirms that removing M reassigns over 62% of share pairs. Under the 3-feature solution, Cluster 2 isolated small-dollar "
-        "turnover shares ($11.08B vs $47.66B). Under the 2-feature solution, traded turnover distributions became indistinguishable "
-        "across clusters ($32.8B, $34.3B, and $48.1B). This proves that Monetary value primarily distinguishes liquidity scale rather "
-        "than temporal trading activity."
+        "Monetary Removal Experiment: Ward clustering refitted on [R, F] alone at k=3 yielded an Adjusted Rand Index (ARI) of 0.3791 "
+        "(Hubert and Arabie, 1985). This confirms that removing M reassigns over 62% of share pairs. Under the 3-feature solution, "
+        "Cluster 2 isolated small-dollar turnover shares ($11.08B vs $47.66B). Under the 2-feature solution, traded turnover distributions "
+        "became indistinguishable across clusters ($32.8B, $34.3B, and $48.1B). This proves that Monetary value primarily distinguishes "
+        "liquidity scale rather than temporal trading activity."
     )
     
     if os.path.exists("figures/monetary_ablation_distribution.png"):
@@ -343,9 +382,10 @@ def create_docx_report():
     # ----------------------------------------------------
     doc.add_heading("Task 3 – Business Intelligence and Critical Review", level=1)
     
-    doc.add_heading("3.1 Data Mart Design (146 words — Strict Limit <= 200 Words)", level=2)
+    doc.add_heading("3.1 Data Mart Design (152 words — Strict Limit <= 200 Words)", level=2)
     doc.add_paragraph(
-        "3.1.1 Grain, Facts, and Dimensions: A Kimball star schema integrates trading facts and dimensional context across two granularities:\n"
+        "3.1.1 Grain, Facts, and Dimensions: A Kimball star schema (Kimball and Ross, 2013) integrates trading facts and dimensional context "
+        "across two granularities, aligning with enterprise data warehouse standards (Inmon, 2005):\n"
         "1. Fact_Daily_Trading (grain: one record per share per trading date; facts: Close price, Volume, Dollar turnover, 20-day baseline, high-volume event indicator).\n"
         "2. Fact_Weekly_Metrics (grain: one record per share per Friday week; facts: weekly share return, benchmark return, weekly beta).\n"
         "These link to conformed dimensions: Dim_Date (trading calendar, holidays), Dim_Share (ticker, corporate identifier, company name), "
@@ -354,14 +394,14 @@ def create_docx_report():
     doc.add_paragraph(
         "3.1.2 Provenance and Calculation History: An audit table (Pipeline_Execution_Log) logs execution timestamps, environment dependencies, "
         "parameter configurations (20-day baseline, 2.0 threshold, 60-day window), and observation date snapshots. Dim_Share_Clustering applies "
-        "Slowly Changing Dimensions (SCD Type 2) with valid date ranges (Valid_From, Valid_To, Is_Current) to track cluster migration across quarterly rebalancing."
+        "Slowly Changing Dimensions (SCD Type 2) with valid date ranges (Valid_From, Valid_To, Is_Current) to track cluster migration across quarterly rebalancing (Kimball and Ross, 2013)."
     )
     doc.add_paragraph(
         "3.1.3 Analytical and Stakeholder Support: Portfolio managers slice Fact_Weekly_Metrics across sectors to filter defensive low-beta equities. "
         "Concurrently, fintech BI dashboards query Fact_Daily_Trading to generate real-time alerts when volume frequency spikes without return momentum."
     )
     
-    doc.add_heading("3.2 Review of Results and Visualisation (411 words — Strict Limit <= 500 Words)", level=2)
+    doc.add_heading("3.2 Review of Results and Visualisation (428 words — Strict Limit <= 500 Words)", level=2)
     doc.add_paragraph(
         "3.2.1 Cluster Profiles and Sector Composition: Cross-tabulating Risk/Return clusters against Adapted RFM partitions demonstrates that "
         "market sensitivity and trading activity are fundamentally decoupled. High-Beta Momentum equities (Cluster 2, n=35, mean return +46.3% p.a., "
@@ -373,18 +413,18 @@ def create_docx_report():
     )
     doc.add_paragraph(
         "3.2.2 Sensitivity Findings and Business Uses: The ablation experiment confirms that Monetary turnover dictates major cluster boundaries "
-        "(ARI = 0.3791). In asset management, retaining M is essential for liquidity screening: institutional funds with mandate constraints must "
+        "(ARI = 0.3791; Hubert and Arabie, 1985). In asset management, retaining M is essential for liquidity screening: institutional funds with mandate constraints must "
         "avoid illiquid names regardless of volume spikes. Conversely, for fintech trading desks and campaign analytics, the 2-feature [R, F] model "
         "provides superior utility. It highlights abnormal trading surges without favoring mega-cap market capitalizations, alerting execution "
         "desks to sudden institutional interest in overlooked equities."
     )
     doc.add_paragraph(
         "3.2.3 Critical Evaluation and Limitations: Five core methodological limitations must qualify these conclusions:\n"
-        "1. Return Dependencies and Non-Linearity: Weekly beta presumes a linear market model. It ignores tail dependence, co-skewness, and systemic breakdown during crises. True diversification requires copula modeling or dynamic covariance estimation, not beta sorting alone.\n"
+        "1. Return Dependencies and Non-Linearity: Weekly beta presumes a linear single-index market model (Sharpe, 1964) and fails to capture multi-factor asset pricing dynamics (Fama and French, 1993; Carhart, 1997) or systemic crisis co-skewness. True diversification requires copula modeling or dynamic covariance estimation, not beta sorting alone.\n"
         "2. Benchmark Basis Mismatch: Using the unadjusted S&P 500 price index (^GSPC) against dividend-adjusted equity prices introduces an upward return drift equal to market dividend yield (~1.5-2.0% annually). While beta slopes remain unbiased, absolute alpha is distorted.\n"
         "3. Survivorship Bias: Conditioning on the modern constituent list ignores failures over 2021–2024, artificially elevating mean returns and underestimating drawdown risks.\n"
-        "4. Euclidean Geometry on Correlated Features: Negative correlation between R and F (r = -0.345) gives repeated weight to event timing in Euclidean space. Mahalanobis distance would provide affine-invariant metric scaling.\n"
-        "5. Liquidity Proxy Constraints: Dollar turnover (M) measures past traded volume, not market microstructure depth. It ignores bid-ask spreads, order book depth, and market impact costs.\n\n"
+        "4. Euclidean Geometry on Correlated Features: Negative correlation between R and F (r = -0.345) gives repeated weight to event timing in Euclidean space (Kaufman and Rousseeuw, 2009). Mahalanobis distance would provide affine-invariant metric scaling.\n"
+        "5. Liquidity Proxy Constraints: Dollar turnover (M) measures past traded volume, not market microstructure depth or order book resilience (Amihud, 2002).\n\n"
         "Predictive Warning: These clusters are retrospective, descriptive characterizations of historical 2021–2024 behavior. They possess zero guaranteed predictive power for future equity returns. Constructing investment portfolios based on historical cluster membership commits the post-hoc fallacy and exposes investors to severe regime-shift losses."
     )
     
@@ -408,18 +448,20 @@ def create_docx_report():
     p_data = doc.add_paragraph("• Validated Datasets: data/features_all.csv, data/exclusion_log.csv, data/cluster_assignments.csv")
     
     doc.add_heading("References", level=1)
-    refs = [
-        "Fama, E.F. and French, K.R. (1993) 'Common risk factors in the returns on stocks and bonds', Journal of Financial Economics, 33(1), pp. 3–56.",
-        "Kaufman, L. and Rousseeuw, P.J. (2009) Finding groups in data: an introduction to cluster analysis. Hoboken: John Wiley & Sons.",
-        "Kimball, R. and Ross, M. (2013) The data warehouse toolkit: the definitive guide to dimensional modeling. 3rd edn. Indianapolis: John Wiley & Sons.",
-        "Markowitz, H. (1952) 'Portfolio selection', The Journal of Finance, 7(1), pp. 77–91.",
-        "Rousseeuw, P.J. (1987) 'Silhouettes: a graphical aid to the interpretation and validation of cluster analysis', Journal of Computational and Applied Mathematics, 20, pp. 53–65.",
-        "Sharpe, W.F. (1964) 'Capital asset prices: A theory of market equilibrium under conditions of risk', The Journal of Finance, 19(3), pp. 425–442.",
-        "Ward, J.H. (1963) 'Hierarchical grouping to optimize an objective function', Journal of the American Statistical Association, 58(301), pp. 236–244."
-    ]
-    for r in refs:
-        p_ref = doc.add_paragraph(r)
-        p_ref.paragraph_format.space_after = Pt(4)
+    
+    add_harvard_reference(doc, "Amihud, Y.", "2002", "Illiquidity and stock returns: cross-section and time-series effects", container="Journal of Financial Markets", vol_pages="5(1), pp. 31–56")
+    add_harvard_reference(doc, "Carhart, M.M.", "1997", "On persistence in mutual fund performance", container="The Journal of Finance", vol_pages="52(1), pp. 57–82")
+    add_harvard_reference(doc, "Fama, E.F. and French, K.R.", "1993", "Common risk factors in the returns on stocks and bonds", container="Journal of Financial Economics", vol_pages="33(1), pp. 3–56")
+    add_harvard_reference(doc, "Hubert, L. and Arabie, P.", "1985", "Comparing partitions", container="Journal of Classification", vol_pages="2(1), pp. 193–218")
+    add_harvard_reference(doc, "Hughes, A.M.", "1994", "Strategic database marketing: the masterplan for starting and managing a profitable, customer-based marketing program", pub_info="Chicago: Probus Publishing")
+    add_harvard_reference(doc, "Inmon, W.H.", "2005", "Building the data warehouse", pub_info="4th edn. Indianapolis: John Wiley & Sons")
+    add_harvard_reference(doc, "Kaufman, L. and Rousseeuw, P.J.", "2009", "Finding groups in data: an introduction to cluster analysis", pub_info="Hoboken: John Wiley & Sons")
+    add_harvard_reference(doc, "Kimball, R. and Ross, M.", "2013", "The data warehouse toolkit: the definitive guide to dimensional modeling", pub_info="3rd edn. Indianapolis: John Wiley & Sons")
+    add_harvard_reference(doc, "MacQueen, J.", "1967", "Some methods for classification and analysis of multivariate observations", container="Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability", vol_pages="Berkeley: University of California Press, pp. 281–297")
+    add_harvard_reference(doc, "Markowitz, H.", "1952", "Portfolio selection", container="The Journal of Finance", vol_pages="7(1), pp. 77–91")
+    add_harvard_reference(doc, "Rousseeuw, P.J.", "1987", "Silhouettes: a graphical aid to the interpretation and validation of cluster analysis", container="Journal of Computational and Applied Mathematics", vol_pages="20, pp. 53–65")
+    add_harvard_reference(doc, "Sharpe, W.F.", "1964", "Capital asset prices: a theory of market equilibrium under conditions of risk", container="The Journal of Finance", vol_pages="19(3), pp. 425–442")
+    add_harvard_reference(doc, "Ward, J.H.", "1963", "Hierarchical grouping to optimize an objective function", container="Journal of the American Statistical Association", vol_pages="58(301), pp. 236–244")
         
     output_path = "report/CR_CM_Coursework_Report.docx"
     doc.save(output_path)

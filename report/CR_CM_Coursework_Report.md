@@ -13,9 +13,9 @@
 
 ## Executive Summary & Research Context
 
-Customer Relationship Management (CRM) conventionally applies Recency, Frequency, and Monetary (RFM) segmentation to transactional customer databases to profile purchase recency, purchase regularity, and customer lifetime value. In financial technology and asset pricing, however, equity securities do not exhibit consumer purchase behavior. Instead, equity transactions reflect institutional order execution, market liquidity, and reactions to fundamental news, while returns and volatility capture systematic risk and capital cost.
+Customer Relationship Management (CRM) conventionally applies Recency, Frequency, and Monetary (RFM) segmentation (Hughes, 1994) to transactional customer databases to profile purchase recency, purchase regularity, and customer lifetime value. In financial technology and asset pricing, however, equity securities do not exhibit consumer purchase behavior. Instead, equity transactions reflect institutional order execution, market liquidity, and reactions to fundamental news, while returns and volatility capture systematic risk and capital cost.
 
-This investigation adapts RFM principles to equity trading dynamics across the S&P 500 universe over a four-year window (2021–2024, terminating on 31 December 2024). We contrast this adapted trading-activity space against a classic risk-return space defined by mean weekly return and weekly market beta. Using Agglomerative Hierarchical Clustering (Ward linkage) and K-Means partitioning, we evaluate empirical group structures, assess sensitivity to feature collinearity and Monetary omission via the Adjusted Rand Index, and formulate a Kimball dimensional data mart for portfolio managers and fintech analytics teams.
+This investigation adapts RFM principles to equity trading dynamics across the S&P 500 universe over a four-year window (2021–2024, terminating on 31 December 2024). We contrast this adapted trading-activity space against a classic risk-return space grounded in Modern Portfolio Theory (Markowitz, 1952) and the Capital Asset Pricing Model (Sharpe, 1964). Using Agglomerative Hierarchical Clustering (Ward, 1963; Kaufman and Rousseeuw, 2009) and K-Means partitioning (MacQueen, 1967), we evaluate empirical group structures, assess sensitivity to feature collinearity and Monetary omission via the Adjusted Rand Index (Hubert and Arabie, 1985), and formulate a Kimball dimensional data mart (Kimball and Ross, 2013) for institutional asset managers and quantitative fintech platforms.
 
 ---
 
@@ -42,7 +42,7 @@ $$R_{w} = \frac{P_{w}}{P_{w-1}} - 1$$
 Dropping incomplete boundary weeks yielded 208 aligned weekly returns. The return feature is the arithmetic sample mean:
 $$\bar{R} = \frac{1}{N} \sum_{w=1}^{N} R_{w}$$
 
-Weekly Beta ($\beta$) measures systematic return sensitivity against the S&P 500 benchmark (`^GSPC`) over matched Friday sessions:
+Weekly Beta ($\beta$) measures systematic return sensitivity against the S&P 500 benchmark (`^GSPC`) over matched Friday sessions according to the Capital Asset Pricing Model (Sharpe, 1964; Fama and French, 1993):
 $$\beta = \frac{\text{Cov}(R_{\text{share}}, R_{\text{market}})}{\text{Var}(R_{\text{market}})}$$
 Across the 491 shares, beta averaged 1.054 (standard deviation: 0.407), spanning from defensive assets (Newmont `NEM` at 0.354) to high-beta technology shares (Enphase `ENPH` at 2.215, Tesla `TSLA` at 2.084).
 
@@ -50,7 +50,7 @@ Across the 491 shares, beta averaged 1.054 (standard deviation: 0.407), spanning
 Individual share series use Adjusted Close (total return including dividends), whereas `^GSPC` is a price-return index excluding dividend reinvestment. This mismatch induces a minor upward intercept shift in share returns equal to the market dividend yield ($\approx 1.5\text{--}2.0\%$ annually), though covariance-based beta slopes remain consistent.
 
 ### 1.4 Adapted RFM Feature Engineering
-Trading activity was quantified using three adapted measures anchored on **31 December 2024**:
+While traditional RFM measures transactional consumer loyalty (Hughes, 1994), its financial market adaptation translates trading dynamics into three activity measures anchored on **31 December 2024**:
 * **High-Volume Event:** Session $t$ qualifies if its trading volume exceeds twice the mean volume of the preceding 20 trading sessions (excluding day $t$):
   $$\text{Volume}_t > 2.0 \times \left( \frac{1}{20} \sum_{i=1}^{20} \text{Volume}_{t-i} \right)$$
 * **Recency ($R$):** Elapsed **calendar days** (including weekends and holidays) between the latest qualifying volume event in the valid study history and the observation date (31 December 2024). $R = 0$ if an event occurred on 31 December 2024.
@@ -67,6 +67,8 @@ For **Apple Inc. (AAPL)** on 31 December 2024:
 * Recency ($R$): $11$ calendar days ($31\text{ Dec} - 20\text{ Dec}$).
 * Frequency ($F$): $2$ high-volume sessions within the 60-day window.
 * Monetary ($M$): $\$623.30\text{ Billion}$ USD ($\log_{1p}M = 27.158$).
+
+**Metric Interpretation & Liquidity Limitations:** While dollar turnover ($M$) acts as an operational proxy for liquidity scale, it captures retrospective trading intensity rather than order book depth, bid-ask spreads, or market impact costs (Amihud, 2002).
 
 ---
 
@@ -88,7 +90,7 @@ Raw Monetary turnover displayed extreme positive skewness of **$+13.1005$**, dri
 | **Monetary ($M$)** | $+13.1005$ | **$+0.9353$** | $\log_{1p}$ transformed, then standardized |
 
 ### 2.2 Agglomerative Hierarchical Clustering (Ward Linkage)
-Ward linkage with Euclidean distance was fitted to both standardized spaces. Dendrograms were constructed for each matrix (`figures/dendrogram_risk_return.png` and `figures/dendrogram_rfm.png`). Silhouette scores across candidate partitions $k \in [2, 8]$ were evaluated:
+Agglomerative hierarchical clustering was implemented using Ward's minimum variance criterion in Euclidean space (Ward, 1963; Kaufman and Rousseeuw, 2009). Dendrograms were constructed for each matrix (`figures/dendrogram_risk_return.png` and `figures/dendrogram_rfm.png`). Silhouette width analysis (Rousseeuw, 1987) across candidate partitions $k \in [2, 8]$ was evaluated:
 
 | Cluster Count ($k$) | Risk & Return Ward Silhouette | Adapted RFM Ward Silhouette |
 | :---: | :---: | :---: |
@@ -103,7 +105,7 @@ Ward linkage with Euclidean distance was fitted to both standardized spaces. Den
 Although $k=2$ maximizes silhouette width in RFM, it isolates extreme dormant outliers rather than identifying functional trading tiers. Selecting **$k=3$** in both matrices achieved balanced group sizes and clear financial interpretability.
 
 ### 2.3 K-Means Clustering and Diagnostics
-K-Means models ($k \in [2, 8]$) were fitted with `random_state=42` and `n_init=30`. Inertia curves exhibited elbows at $k=3$ (Risk/Return inertia dropped from 629.6 at $k=2$ to 474.6 at $k=3$; RFM dropped from 1,079.3 to 802.5). Silhouette scores verified stable partitioning (0.3213 for Risk/Return, 0.3257 for RFM at $k=3$).
+K-Means partitioning (MacQueen, 1967) was fitted across candidate partitions $k \in [2, 8]$ with `random_state=42` and `n_init=30`. Inertia curves exhibited elbows at $k=3$ (Risk/Return inertia dropped from 629.6 at $k=2$ to 474.6 at $k=3$; RFM dropped from 1,079.3 to 802.5). Silhouette scores (Rousseeuw, 1987) verified stable partitioning (0.3213 for Risk/Return, 0.3257 for RFM at $k=3$).
 
 ### 2.4 Cluster Profiles in Original Units
 Cluster centroids were mapped back into original physical units:
@@ -118,7 +120,7 @@ Cluster centroids were mapped back into original physical units:
 * **Cluster 1 — Dormant Outliers ($n=87$):** Recency **$56.92$ days**, Frequency $0.62$ events, 60-day turnover $\$48.21\text{ Billion}$.
 * **Cluster 2 — Mid-Tier Moderate Liquidity ($n=157$):** Recency $13.65$ days, Frequency $2.41$ events, 60-day turnover **$\$11.08\text{ Billion}$**.
 
-Cross-algorithm agreement on identical shares was quantified via the Adjusted Rand Index:
+Cross-algorithm agreement on identical shares was quantified via the Adjusted Rand Index (Hubert and Arabie, 1985):
 $$\text{ARI}(\text{Ward RR}, \text{K-Means RR}) = 0.1894 \quad | \quad \text{ARI}(\text{Ward RFM}, \text{K-Means RFM}) = 0.3475$$
 The lower ARI in Risk/Return reflects K-Means imposing spherical partitions around high-beta equities, whereas Ward creates layered horizontal cuts across return tiers.
 
@@ -147,13 +149,13 @@ An ARI of 0.3791 demonstrates that removing $M$ reassigns over 62% of share pair
 ### 3.1 Data Mart Design
 
 #### 3.1.1 Grain, Facts, and Dimensions
-A Kimball star schema integrates trading facts and dimensional context across two granularities:
+A Kimball star schema (Kimball and Ross, 2013) integrates trading facts and dimensional context across two granularities, aligning with enterprise data warehouse standards (Inmon, 2005):
 1. `Fact_Daily_Trading` (grain: one record per share per trading date; facts: Close price, Volume, Dollar turnover, 20-day baseline, high-volume event indicator).
 2. `Fact_Weekly_Metrics` (grain: one record per share per Friday week; facts: weekly share return, benchmark return, weekly beta).
 These link to conformed dimensions: `Dim_Date` (trading calendar, holidays), `Dim_Share` (ticker, corporate identifier, company name), `Dim_Sector` (GICS classification), and `Dim_Benchmark` (^GSPC index).
 
 #### 3.1.2 Provenance and Calculation History
-An audit table (`Pipeline_Execution_Log`) logs execution timestamps, environment dependencies, parameter configurations (20-day baseline, 2.0 threshold, 60-day window), and observation date snapshots. `Dim_Share_Clustering` applies Slowly Changing Dimensions (SCD Type 2) with valid date ranges (`Valid_From`, `Valid_To`, `Is_Current`) to track cluster migration across quarterly rebalancing.
+An audit table (`Pipeline_Execution_Log`) logs execution timestamps, environment dependencies, parameter configurations (20-day baseline, 2.0 threshold, 60-day window), and observation date snapshots. `Dim_Share_Clustering` applies Slowly Changing Dimensions (SCD Type 2) with valid date ranges (`Valid_From`, `Valid_To`, `Is_Current`) to track cluster migration across quarterly rebalancing (Kimball and Ross, 2013).
 
 #### 3.1.3 Analytical and Stakeholder Support
 Portfolio managers slice `Fact_Weekly_Metrics` across sectors to filter defensive low-beta equities. Concurrently, fintech BI dashboards query `Fact_Daily_Trading` to generate real-time alerts when volume frequency spikes without return momentum.
@@ -209,17 +211,17 @@ Cross-tabulating Risk/Return clusters against Adapted RFM partitions demonstrate
 Conversely, Defensive equities (Cluster 0, $n=254$, beta 0.81) dominate Utilities ($100\%$) and Consumer Staples ($89.2\%$). Yet their RFM behavior spans all tiers: $48.4\%$ are Active Regulars, $18.5\%$ are Dormant Outliers (mean recency 56.9 days), and $33.1\%$ are Mid-Tier. Low market sensitivity does not guarantee low liquidity; defensive assets experience intense turnover during macroeconomic rotations.
 
 #### 3.2.2 Sensitivity Findings and Business Uses
-The ablation experiment confirms that Monetary turnover dictates major cluster boundaries (ARI $= 0.3791$). In asset management, retaining $M$ is essential for liquidity screening: institutional funds with mandate constraints must avoid illiquid names regardless of volume spikes.
+The ablation experiment confirms that Monetary turnover dictates major cluster boundaries (ARI $= 0.3791$; Hubert and Arabie, 1985). In asset management, retaining $M$ is essential for liquidity screening: institutional funds with mandate constraints must avoid illiquid names regardless of volume spikes.
 
 Conversely, for fintech trading desks and campaign analytics, the 2-feature $[R, F]$ model provides superior utility. It highlights abnormal trading surges without favoring mega-cap market capitalizations, alerting execution desks to sudden institutional interest in overlooked equities.
 
 #### 3.2.3 Critical Evaluation and Limitations
 Five core methodological limitations must qualify these conclusions:
-1. **Return Dependencies and Non-Linearity:** Weekly beta presumes a linear market model. It ignores tail dependence, co-skewness, and systemic breakdown during crises. True diversification requires copula modeling or dynamic covariance estimation, not beta sorting alone.
+1. **Return Dependencies and Non-Linearity:** Weekly beta presumes a linear single-index market model (Sharpe, 1964) and fails to capture multi-factor asset pricing dynamics (Fama and French, 1993; Carhart, 1997) or systemic crisis co-skewness. True diversification requires copula modeling or dynamic covariance estimation, not beta sorting alone.
 2. **Benchmark Basis Mismatch:** Using the unadjusted S&P 500 price index (`^GSPC`) against dividend-adjusted equity prices introduces an upward return drift equal to market dividend yield ($\approx 1.5\text{--}2.0\%$ annually). While beta slopes remain unbiased, absolute alpha is distorted.
 3. **Survivorship Bias:** Conditioning on the modern constituent list ignores failures over 2021–2024, artificially elevating mean returns and underestimating drawdown risks.
-4. **Euclidean Geometry on Correlated Features:** Negative correlation between $R$ and $F$ ($r = -0.345$) gives repeated weight to event timing in Euclidean space. Mahalanobis distance would provide affine-invariant metric scaling.
-5. **Liquidity Proxy Constraints:** Dollar turnover ($M$) measures past traded volume, not market microstructure depth. It ignores bid-ask spreads, order book depth, and market impact costs.
+4. **Euclidean Geometry on Correlated Features:** Negative correlation between $R$ and $F$ ($r = -0.345$) gives repeated weight to event timing in Euclidean space (Kaufman and Rousseeuw, 2009). Mahalanobis distance would provide affine-invariant metric scaling.
+5. **Liquidity Proxy Constraints:** Dollar turnover ($M$) measures past traded volume, not market microstructure depth or order book resilience (Amihud, 2002).
 
 **Predictive Warning:** These clusters are retrospective, descriptive characterizations of historical 2021–2024 behavior. They possess zero guaranteed predictive power for future equity returns. Constructing investment portfolios based on historical cluster membership commits the post-hoc fallacy and exposes investors to severe regime-shift losses.
 
@@ -238,10 +240,16 @@ All source code, automated test suites, cached data snapshots, and the executed 
 
 ## References
 
+* Amihud, Y. (2002) 'Illiquidity and stock returns: cross-section and time-series effects', *Journal of Financial Markets*, 5(1), pp. 31–56.
+* Carhart, M.M. (1997) 'On persistence in mutual fund performance', *The Journal of Finance*, 52(1), pp. 57–82.
 * Fama, E.F. and French, K.R. (1993) 'Common risk factors in the returns on stocks and bonds', *Journal of Financial Economics*, 33(1), pp. 3–56.
+* Hubert, L. and Arabie, P. (1985) 'Comparing partitions', *Journal of Classification*, 2(1), pp. 193–218.
+* Hughes, A.M. (1994) *Strategic database marketing: the masterplan for starting and managing a profitable, customer-based marketing program*. Chicago: Probus Publishing.
+* Inmon, W.H. (2005) *Building the data warehouse*. 4th edn. Indianapolis: John Wiley & Sons.
 * Kaufman, L. and Rousseeuw, P.J. (2009) *Finding groups in data: an introduction to cluster analysis*. Hoboken: John Wiley & Sons.
 * Kimball, R. and Ross, M. (2013) *The data warehouse toolkit: the definitive guide to dimensional modeling*. 3rd edn. Indianapolis: John Wiley & Sons.
+* MacQueen, J. (1967) 'Some methods for classification and analysis of multivariate observations', in *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability*. Berkeley: University of California Press, pp. 281–297.
 * Markowitz, H. (1952) 'Portfolio selection', *The Journal of Finance*, 7(1), pp. 77–91.
 * Rousseeuw, P.J. (1987) 'Silhouettes: a graphical aid to the interpretation and validation of cluster analysis', *Journal of Computational and Applied Mathematics*, 20, pp. 53–65.
-* Sharpe, W.F. (1964) 'Capital asset prices: A theory of market equilibrium under conditions of risk', *The Journal of Finance*, 19(3), pp. 425–442.
+* Sharpe, W.F. (1964) 'Capital asset prices: a theory of market equilibrium under conditions of risk', *The Journal of Finance*, 19(3), pp. 425–442.
 * Ward, J.H. (1963) 'Hierarchical grouping to optimize an objective function', *Journal of the American Statistical Association*, 58(301), pp. 236–244.
