@@ -2,9 +2,42 @@ import docx
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT
-from docx.oxml import OxmlElement
+from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE
 import os
+
+def add_hyperlink(paragraph, url, text, color="004B87", underline=True):
+    """
+    Adds a true, clickable Word hyperlink (w:hyperlink) to a paragraph.
+    """
+    part = paragraph.part
+    r_id = part.relate_to(url, RELATIONSHIP_TYPE.HYPERLINK, is_external=True)
+    
+    hyperlink = parse_xml(
+        f'<w:hyperlink xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+        f'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="{r_id}"/>'
+    )
+    new_run = parse_xml(
+        f'<w:r xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>'
+    )
+    rPr = parse_xml(
+        f'<w:rPr xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>'
+    )
+    
+    if color:
+        c = parse_xml(f'<w:color xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:val="{color}"/>')
+        rPr.append(c)
+        
+    if underline:
+        u = parse_xml(f'<w:u xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" w:val="single"/>')
+        rPr.append(u)
+        
+    new_run.append(rPr)
+    new_run.text = text
+    hyperlink.append(new_run)
+    paragraph._p.append(hyperlink)
+    return hyperlink
 
 def set_cell_background(cell, fill_hex):
     tcPr = cell._tc.get_or_add_tcPr()
@@ -71,7 +104,9 @@ def create_docx_report():
     p_cand.add_run("IIT Student ID: [Candidate IIT ID]\n").bold = True
     p_cand.add_run("UOW Student ID: [Candidate UOW ID]\n").bold = True
     p_cand.add_run("Submission Date: 24 November 2026\n")
-    p_cand.add_run("GitHub Repository: https://github.com/pasanaseniya/CR-CM-Coursework\n")
+    p_cand.add_run("GitHub Repository: ").bold = True
+    add_hyperlink(p_cand, "https://github.com/pasanaseniya/CR-CM-Coursework", "https://github.com/pasanaseniya/CR-CM-Coursework")
+    p_cand.add_run("\n")
     
     doc.add_page_break()
     
@@ -350,11 +385,16 @@ def create_docx_report():
         "This research establishes that adapting RFM metrics to financial markets offers valuable diagnostic insight into institutional order "
         "activity, provided it is kept distinct from risk and return metrics. Blending these spaces into a single composite rank conceals the structural "
         "tension between market sensitivity and trading liquidity.\n\n"
-        "All source code, automated test suites, cached data snapshots, and the executed Google Colab notebook are available in the public repository:\n"
-        "• GitHub Repository: https://github.com/pasanaseniya/CR-CM-Coursework\n"
-        "• Google Colab Notebook: CR_CM_Coursework_Final.ipynb\n"
-        "• Validated Datasets: data/features_all.csv, data/exclusion_log.csv, data/cluster_assignments.csv"
+        "All source code, automated test suites, cached data snapshots, and the executed Google Colab notebook are available in the public repository:"
     )
+    
+    p_repo = doc.add_paragraph("• Public GitHub Repository: ")
+    add_hyperlink(p_repo, "https://github.com/pasanaseniya/CR-CM-Coursework", "https://github.com/pasanaseniya/CR-CM-Coursework")
+    
+    p_colab = doc.add_paragraph("• Google Colab Notebook (Runnable): ")
+    add_hyperlink(p_colab, "https://colab.research.google.com/github/pasanaseniya/CR-CM-Coursework/blob/main/CR_CM_Coursework_Final.ipynb", "Open in Google Colab (CR_CM_Coursework_Final.ipynb)")
+    
+    p_data = doc.add_paragraph("• Validated Datasets: data/features_all.csv, data/exclusion_log.csv, data/cluster_assignments.csv")
     
     doc.add_heading("References", level=1)
     refs = [
