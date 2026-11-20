@@ -22,12 +22,12 @@ def create_notebook():
     # Cell 1: Title and Metadata
     add_md("""# 6BUIS017W CRM & CM With Business Intelligence
 ## Individual Coursework CWK1: Market Analysis and Stock Segmentation Using RFM
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pasanaseniya-create/CR-CM-Coursework/blob/main/CR_CM_Coursework_Final.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/pasanaseniya/CR-CM-Coursework/blob/main/CR_CM_Coursework_Final.ipynb)
 
 **Student Name / ID:** Candidate Submission  
 **Module Leader:** Dr Panagiotis Chountas  
 **Institution:** University of Westminster, School of Computer Science & Engineering  
-**Public GitHub Repository:** https://github.com/pasanaseniya-create/CR-CM-Coursework  
+**Public GitHub Repository:** https://github.com/pasanaseniya/CR-CM-Coursework  
 **Observation Date:** 2024-12-31 (Final completed trading session of 2024)  
 **Study Window:** 2021-01-01 to 2025-01-01 (Daily prices, volume, and ^GSPC benchmark)
 """)
@@ -46,7 +46,7 @@ except ImportError:
 if IN_COLAB:
     import os
     if not os.path.exists("src"):
-        !git clone https://github.com/pasanaseniya-create/CR-CM-Coursework.git
+        !git clone https://github.com/pasanaseniya/CR-CM-Coursework.git
         %cd CR-CM-Coursework
     !pip install -q yfinance scikit-learn seaborn matplotlib pandas numpy scipy
 

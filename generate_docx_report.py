@@ -71,7 +71,7 @@ def create_docx_report():
     p_cand.add_run("IIT Student ID: [Candidate IIT ID]\n").bold = True
     p_cand.add_run("UOW Student ID: [Candidate UOW ID]\n").bold = True
     p_cand.add_run("Submission Date: 24 November 2026\n")
-    p_cand.add_run("GitHub Repository: https://github.com/pasanaseniya-create/CR-CM-Coursework\n")
+    p_cand.add_run("GitHub Repository: https://github.com/pasanaseniya/CR-CM-Coursework\n")
     
     doc.add_page_break()
     
@@ -351,7 +351,7 @@ def create_docx_report():
         "activity, provided it is kept distinct from risk and return metrics. Blending these spaces into a single composite rank conceals the structural "
         "tension between market sensitivity and trading liquidity.\n\n"
         "All source code, automated test suites, cached data snapshots, and the executed Google Colab notebook are available in the public repository:\n"
-        "• GitHub Repository: https://github.com/pasanaseniya-create/CR-CM-Coursework\n"
+        "• GitHub Repository: https://github.com/pasanaseniya/CR-CM-Coursework\n"
         "• Google Colab Notebook: CR_CM_Coursework_Final.ipynb\n"
         "• Validated Datasets: data/features_all.csv, data/exclusion_log.csv, data/cluster_assignments.csv"
     )
