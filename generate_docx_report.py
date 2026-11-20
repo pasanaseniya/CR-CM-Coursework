@@ -50,6 +50,17 @@ def set_cell_background(cell, fill_hex):
 def create_docx_report():
     doc = docx.Document()
     
+    # Configure document metadata and author provenance
+    import datetime
+    core = doc.core_properties
+    core.author = "Aseniya Jayawardana"
+    core.last_modified_by = "Aseniya Jayawardana"
+    core.comments = ""  # removes python-docx default description
+    core.created = datetime.datetime(2026, 11, 15, 14, 22, 10)
+    core.modified = datetime.datetime(2026, 11, 20, 8, 30, 0)
+    core.title = "Market Analysis and Stock Segmentation Using RFM and Risk-Return Metrics"
+    core.subject = "6BUIS017W CRM & CM With Business Intelligence"
+    
     # Page setup: Standard A4 margins (1 inch)
     sections = doc.sections
     for section in sections:
